@@ -1,7 +1,8 @@
 ---
 
-### 3️⃣ `LICENSE`
-Standard MIT License. This makes it safe for recruiters to view your code.
+### 2️⃣ `LICENSE` (Copy & Overwrite)
+
+Open your `LICENSE` file (create it if it's missing) and paste this:
 
 ```text
 MIT License
