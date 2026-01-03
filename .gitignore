@@ -1,0 +1,13 @@
+# Data
+data/
+*.csv
+*.db
+*.pkl
+!models/*.pkl  # We DO want to upload the trained models
+!models/scaler.pkl
+
+# System
+__pycache__/
+venv/
+.env
+.DS_Store
