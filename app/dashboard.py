@@ -1,87 +1,84 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 import time
 import plotly.express as px
+import numpy as np
 
-# Page Config (Browser Title)
+# Page Config
 st.set_page_config(
     page_title="AjayDataLabs | Fraud Monitor",
     page_icon="🛡️",
     layout="wide",
 )
 
-# Dashboard Title
 st.title("🛡️ Real-Time Financial Fraud Detection")
-st.markdown(f"**Live System Status:** 🟢 Online | **Engine:** Isolation Forest")
+st.markdown("### 🔴 Live System Monitor (Cloud Demo)")
 
-# Connect to Database
-DB_NAME = "fraud_detection.db"
+# --- 1. SESSION STATE SETUP ---
+# This acts as our "Temporary Database" in the cloud memory
+if "data" not in st.session_state:
+    st.session_state.data = pd.DataFrame(columns=['timestamp', 'amount', 'anomaly_score', 'prediction'])
 
-def load_data():
-    """Fetch the last 100 transactions from the database"""
-    conn = sqlite3.connect(DB_NAME)
-    # Get last 200 rows to show trends
-    df = pd.read_sql("SELECT * FROM transactions ORDER BY id DESC LIMIT 200", conn)
-    conn.close()
-    return df
+# --- 2. SIDEBAR CONTROLS ---
+st.sidebar.header("🔧 Control Panel")
+run_simulation = st.sidebar.checkbox("Run Live Simulation", value=True)
+speed = st.sidebar.slider("Refresh Speed (seconds)", 0.1, 2.0, 1.0)
 
-# Create placeholders for live updates
-kpi_placeholder = st.empty()
-charts_placeholder = st.empty()
-table_placeholder = st.empty()
-
-# Auto-Refresh Loop
-while True:
-    # 1. Fetch Data
-    df = load_data()
+# --- 3. SIMULATION LOGIC (No DB Required) ---
+def generate_fake_data():
+    """Generates a single transaction for the demo"""
+    now = time.strftime("%H:%M:%S")
     
-    if not df.empty:
-        # Calculate Metrics
-        total_tx = len(df)
-        fraud_tx = df[df['is_fraud'] == 1]
-        fraud_count = len(fraud_tx)
-        fraud_rate = (fraud_count / total_tx) * 100 if total_tx > 0 else 0
+    # 95% Normal, 5% Fraud
+    if np.random.random() > 0.95: 
+        amount = np.random.normal(500, 100) # High amount
+        score = np.random.uniform(-0.3, -0.01) # Negative score = Anomaly
+        pred = "Anomaly"
+    else:
+        amount = np.random.normal(50, 20)   # Normal amount
+        score = np.random.uniform(0.0, 0.3)  # Positive score = Normal
+        pred = "Normal"
         
-        # 2. Update KPIs (Top Row)
-        with kpi_placeholder.container():
-            col1, col2, col3 = st.columns(3)
-            col1.metric("📦 Recent Transactions", total_tx)
-            col2.metric("🚨 Anomalies Detected", fraud_count, delta_color="inverse")
-            col3.metric("⚠️ Fraud Rate (Last 200)", f"{fraud_rate:.1f}%")
+    return {"timestamp": now, "amount": abs(amount), "anomaly_score": score, "prediction": pred}
 
-        # 3. Update Charts (Middle Row)
-        with charts_placeholder.container():
-            col_left, col_right = st.columns(2)
-            
-            # Chart 1: Anomaly Score Trend (The "Heartbeat")
-            fig_score = px.line(df, x=df.index, y="anomaly_score", 
-                                title="Live Anomaly Scores (Lower = More Suspicious)",
-                                markers=True)
-            # Add a red line for the threshold (approx -0.05 to 0 usually)
-            fig_score.add_hline(y=0, line_dash="dash", line_color="red", annotation_text="Threshold")
-            col_left.plotly_chart(fig_score, use_container_width=True)
-            
-            # Chart 2: Amount vs. Anomaly (Scatter)
-            # Fraud often happens at high amounts or specific low amounts
-            fig_scatter = px.scatter(df, x="amount", y="anomaly_score", 
-                                     color="prediction", 
-                                     title="Transaction Amount vs. Anomaly Score",
-                                     color_discrete_map={"Normal": "blue", "Anomaly": "red"})
-            col_right.plotly_chart(fig_scatter, use_container_width=True)
+# --- 4. DASHBOARD LOOP ---
+placeholder = st.empty()
 
-        # 4. Update Table (Bottom Row)
-        with table_placeholder.container():
-            st.subheader("📋 Recent Activity Feed")
-            # Show top 10 most recent
-            display_df = df[['timestamp', 'amount', 'prediction', 'anomaly_score']].head(10)
-            
-            # Style the table: Highlight Anomalies in Red
-            def highlight_fraud(val):
-                color = 'red' if val == 'Anomaly' else 'green'
-                return f'color: {color}; font-weight: bold'
+if run_simulation:
+    # Generate 1 new row of data
+    new_row = generate_fake_data()
+    
+    # Add to our "memory" dataframe (Keep last 200 rows only)
+    st.session_state.data = pd.concat([pd.DataFrame([new_row]), st.session_state.data], ignore_index=True).head(200)
 
-            st.dataframe(display_df.style.applymap(highlight_fraud, subset=['prediction']), use_container_width=True)
+    # UI LAYOUT
+    df = st.session_state.data
+    anomalies = df[df['prediction'] == 'Anomaly']
+    
+    with placeholder.container():
+        # KPI Row
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Transactions Processed", len(df))
+        k2.metric("🚨 Anomalies Detected", len(anomalies), delta_color="inverse")
+        k3.metric("System Status", "ACTIVE" if len(anomalies) < 5 else "HIGH ALERT")
 
-    # Refresh every 1 second
-    time.sleep(1)
+        # Charts
+        c1, c2 = st.columns(2)
+        
+        # Chart 1: Anomaly Scores
+        fig_line = px.line(df, x='timestamp', y='anomaly_score', title="Live Anomaly Score Stream", markers=True)
+        fig_line.add_hline(y=0, line_dash="dash", line_color="red", annotation_text="Threshold")
+        c1.plotly_chart(fig_line, use_container_width=True)
+        
+        # Chart 2: Amount vs Risk
+        fig_scat = px.scatter(df, x='amount', y='anomaly_score', color='prediction',
+                              color_discrete_map={"Normal": "blue", "Anomaly": "red"},
+                              title="Transaction Amount vs. Risk Score")
+        c2.plotly_chart(fig_scat, use_container_width=True)
+
+        # Table
+        st.dataframe(df.style.applymap(lambda x: 'color: red; font-weight: bold' if x == 'Anomaly' else 'color: green', subset=['prediction']), use_container_width=True)
+
+    # Wait before next update
+    time.sleep(speed)
+    st.rerun()
