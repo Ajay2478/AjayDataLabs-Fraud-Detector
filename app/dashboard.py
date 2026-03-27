@@ -8,12 +8,12 @@ import numpy as np
 # Page Config
 st.set_page_config(
     page_title="AjayDataLabs | Real Fraud Detection",
-    page_icon="🛡️",
+    page_icon=" ",
     layout="wide",
 )
 
-st.title("🛡️ Real-Time Financial Fraud Detection")
-st.markdown("### 🟢 Live System Monitor (Running Real Isolation Forest Model)")
+st.title("Real-Time Financial Fraud Detection")
+st.markdown("### Live System Monitor (Running Real Isolation Forest Model)")
 
 # --- 1. LOAD RESOURCES (CACHED) ---
 # We use @st.cache to load the model only once, so it's fast
@@ -32,9 +32,9 @@ def load_data():
 try:
     model, scaler = load_resources()
     stream_data = load_data()
-    st.success("✅ Model & Real Data Loaded Successfully")
+    st.success("Model & Real Data Loaded Successfully")
 except Exception as e:
-    st.error(f"❌ Error loading resources: {e}")
+    st.error(f"Error loading resources: {e}")
     st.stop()
 
 # --- 2. SESSION STATE ---
@@ -92,7 +92,7 @@ if run_simulation:
             # KPI Row
             k1, k2, k3 = st.columns(3)
             k1.metric("Transactions Scanned", st.session_state.rows_processed)
-            k2.metric("🚨 Anomalies Found", len(anomalies), delta_color="inverse")
+            k2.metric("Anomalies Found", len(anomalies), delta_color="inverse")
             
             # Dynamic Risk Status
             risk_level = "LOW"
@@ -119,7 +119,7 @@ if run_simulation:
             st.dataframe(df.style.applymap(lambda x: 'color: red; font-weight: bold' if x == 'Anomaly' else 'color: green', subset=['prediction']), use_container_width=True)
 
     else:
-        st.warning("⚠️ End of Sample Data Stream. Refresh page to restart.")
+        st.warning("End of Sample Data Stream. Refresh page to restart.")
 
     time.sleep(speed)
     st.rerun()
