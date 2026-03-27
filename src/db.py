@@ -20,7 +20,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("✅ Database initialized.")
+    print("Database initialized.")
 
 def save_transaction(amount, score, prediction, is_fraud):
     """Saves a single processed transaction."""
