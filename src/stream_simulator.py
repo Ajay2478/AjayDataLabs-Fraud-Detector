@@ -8,15 +8,15 @@ import json
 URL = "http://127.0.0.1:8000/predict"
 
 def run_simulation():
-    print("🌊 Loading Stream Data...")
+    print("Loading Stream Data...")
     try:
         # Load the "Future" data we saved earlier
         df = pd.read_csv("data/stream_data.csv")
     except FileNotFoundError:
-        print("❌ Error: data/stream_data.csv not found.")
+        print("Error: data/stream_data.csv not found.")
         return
 
-    print(f"🚀 Starting Real-Time Simulation with {len(df)} transactions...")
+    print(f"Starting Real-Time Simulation with {len(df)} transactions...")
     print("Press Ctrl+C to stop.")
     print("-" * 50)
 
@@ -50,16 +50,16 @@ def run_simulation():
                 # 3. Print Result (Color Coded)
                 # If Anomaly -> RED, If Normal -> GREEN
                 if prediction == "Anomaly":
-                    print(f"🚨 ALERT! [ID: {index}] | Score: {score:.4f} | Latency: {latency:.1f}ms")
+                    print(f"ALERT! [ID: {index}] | Score: {score:.4f} | Latency: {latency:.1f}ms")
                 else:
                     # Print normal transactions less frequently to reduce noise, or print all succinctly
-                    print(f"✅ Normal  [ID: {index}] | Score: {score:.4f} | Latency: {latency:.1f}ms")
+                    print(f"Normal  [ID: {index}] | Score: {score:.4f} | Latency: {latency:.1f}ms")
             
             else:
-                print(f"❌ Error {response.status_code}: {response.text}")
+                print(f"Error {response.status_code}: {response.text}")
 
         except Exception as e:
-            print(f"⚠️ Connection Failed: {e}")
+            print(f"Connection Failed: {e}")
             break
         
         # 4. Sleep to simulate real-time traffic
